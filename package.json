@@ -1,0 +1,47 @@
+{
+  "name": "twistlock-results-json-to-markdown-action",
+  "description": "Twistlock/Prisma Scan Results JSON to Markdown",
+  "version": "1.0.0",
+  "author": "",
+  "private": true,
+  "homepage": "https://github.com/joshjohanning/twistlock-results-json-to-markdown-action#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twistlock-results-json-to-markdown-action.git"
+  },
+  "bugs": {
+    "url": "https://github.com/twistlock-results-json-to-markdown-action/issues"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "JavaScript",
+    "Twistlock",
+    "Prisma",
+    "json2md"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "bundle": "npm run format:write && npm run package",
+    "ci-test": "npx jest",
+    "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
+    "format:write": "npx prettier --write .",
+    "format:check": "npx prettier --check .",
+    "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
+    "package": "npx ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "package:watch": "npm run package -- --watch",
+    "test": "npx jest",
+    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "json2md": "^2.0.1",
+    "yargs": "^17.7.2"
+  }
+}
