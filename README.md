@@ -20,4 +20,4 @@ steps:
 
 ## Example
 
-![Twistlock JSON to Markdown Job Summary Example](https://github.com/joshjohanning/twistlock-results-json-to-markdown-action/assets/19912012/b7e0b794-8cf3-4894-a9d6-d60aeb956303)
+![Twistlock JSON to Markdown Job Summary Example](https://github.com/joshjohanning/twistlock-results-json-to-markdown-action/assets/19912012/64e4e4bb-95a1-472c-be23-1756b440b974)
