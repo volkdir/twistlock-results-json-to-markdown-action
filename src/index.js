@@ -64,7 +64,10 @@ if (Array.isArray(obj.results) && obj.results.length > 0) {
 
     // write the Markdown vulnerabilities to a file
     const twistlockVulnerabilityTable = "./twistlock-vulnerability-table.md";
-    fs.writeFileSync(twistlockVulnerabilityTable, `${markdownVulnerabilitiesWithDetails}\n`);
+    fs.writeFileSync(
+      twistlockVulnerabilityTable,
+      `${markdownVulnerabilitiesWithDetails}\n`,
+    );
     core.setOutput("vulnerability-table", twistlockVulnerabilityTable);
 
     // count the number of vulnerabilities with each severity
@@ -106,7 +109,10 @@ if (Array.isArray(obj.results) && obj.results.length > 0) {
     var markdownSummary = json2md({ table: { headers: headers, rows: rows } });
 
     // add scan details to the summary table
-    let scanTime = new Date(obj.results[0].scanTime).toISOString().slice(0, 16).replace('T', ' ');
+    let scanTime = new Date(obj.results[0].scanTime)
+      .toISOString()
+      .slice(0, 16)
+      .replace("T", " ");
     let scanId = obj.results[0].scanID;
     let url = obj.consoleURL;
     let summaryDetails = `## Twistlock Scan Summary\n\nScan: 💾 ${scanId} | 📅 ${scanTime} | 🔗 [More Details](${url})`;
