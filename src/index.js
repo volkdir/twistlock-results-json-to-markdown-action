@@ -40,8 +40,8 @@ json2md.converters.vulnerabilities = function (input, json2md) {
 var fs = require("fs");
 var data = fs.readFileSync(
   argv.file ||
-    core.getInput("results-json-path", { required: true }) ||
-    "scanresults.json",
+  core.getInput("results-json-path", { required: true }) ||
+  "scanresults.json",
   "utf8",
 );
 
@@ -51,80 +51,77 @@ var obj = JSON.parse(data);
 if (Array.isArray(obj.results) && obj.results.length > 0) {
   // use the custom converter for the first item in the results array
   var result = obj.results[0];
-  if (result.vulnerabilities) {
-    var markdownVulnerabilities = json2md({
-      vulnerabilities: result.vulnerabilities,
-    });
+  // Always generate tables, even if vulnerabilities array is empty
+  var vulnerabilities = result.vulnerabilities || [];
 
-    let vulnerabilitiesDetails = `## Twistlock Vulnerabilities (${result.vulnerabilities.length})\n`;
-    let markdownVulnerabilitiesWithDetails = `${vulnerabilitiesDetails}\n\n${markdownVulnerabilities}\n`;
+  var markdownVulnerabilities = json2md({
+    vulnerabilities: vulnerabilities,
+  });
 
-    // log the Markdown vulnerabilities to the console
-    console.log(markdownVulnerabilitiesWithDetails);
+  let vulnerabilitiesDetails = `## Twistlock Vulnerabilities (${vulnerabilities.length})\n`;
+  let markdownVulnerabilitiesWithDetails = `${vulnerabilitiesDetails}\n\n${markdownVulnerabilities}\n`;
 
-    // write the Markdown vulnerabilities to a file
-    const twistlockVulnerabilityTable = "./twistlock-vulnerability-table.md";
-    fs.writeFileSync(
-      twistlockVulnerabilityTable,
-      `${markdownVulnerabilitiesWithDetails}\n`,
-    );
-    core.setOutput("vulnerability-table", twistlockVulnerabilityTable);
+  // log the Markdown vulnerabilities to the console
+  console.log(markdownVulnerabilitiesWithDetails);
 
-    // count the number of vulnerabilities with each severity
-    var severityCounts = result.vulnerabilities.reduce(
-      (counts, vulnerability) => {
-        var severity = vulnerability.severity;
-        if (!counts[severity]) {
-          counts[severity] = 0;
-        }
-        counts[severity]++;
-        return counts;
-      },
-      {},
-    );
+  // write the Markdown vulnerabilities to a file
+  const twistlockVulnerabilityTable = "./twistlock-vulnerability-table.md";
+  fs.writeFileSync(
+    twistlockVulnerabilityTable,
+    `${markdownVulnerabilitiesWithDetails}\n`,
+  );
+  core.setOutput("vulnerability-table", twistlockVulnerabilityTable);
 
-    // convert the severityCounts object to a Markdown table
-    var headers = ["Severity", "Count"];
+  // count the number of vulnerabilities with each severity
+  var severityCounts = vulnerabilities.reduce(
+    (counts, vulnerability) => {
+      var severity = vulnerability.severity;
+      if (!counts[severity]) {
+        counts[severity] = 0;
+      }
+      counts[severity]++;
+      return counts;
+    },
+    {},
+  );
 
-    var severitySymbols = {
-      critical: "‼️",
-      important: "❌",
-      high: "⛔️",
-      medium: "⚠️",
-      moderate: "⚠️",
-      low: "🟡",
+  // convert the severityCounts object to a Markdown table
+  var headers = ["Severity", "Count"];
+
+  var severitySymbols = {
+    critical: "‼️",
+    important: "❌",
+    high: "⛔️",
+    medium: "⚠️",
+    moderate: "⚠️",
+    low: "🟡",
+  };
+
+  var rows = Object.keys(severityCounts).map((severity) => {
+    var symbol = severitySymbols[severity] || "";
+    return {
+      Severity: `${symbol} ${severity}`,
+      Count: severityCounts[severity],
     };
+  });
 
-    var rows = Object.keys(severityCounts).map((severity) => {
-      var symbol = severitySymbols[severity] || "";
-      return {
-        Severity: `${symbol} ${severity}`,
-        Count: severityCounts[severity],
-      };
-    });
+  var markdownSummary = json2md({ table: { headers: headers, rows: rows } });
 
-    // simple version - comment out var severitySymbols through to this comment to use simple version
-    // var rows = Object.keys(severityCounts).map(severity => ({ Severity: severity, Count: severityCounts[severity] }));
+  // add scan metadata
+  var scanTime = new Date(obj.results[0].scanTime)
+    .toISOString()
+    .slice(0, 16)
+    .replace("T", " ");
+  var scanId = obj.results[0].scanID;
+  var url = obj.consoleURL;
+  var summaryDetails = `## Twistlock Scan Summary\n\nScan: 💾 ${scanId} | 📅 ${scanTime} | 🔗 [More Details](${url})`;
+  var markdownSummaryWithDetails = `${summaryDetails}\n\n${markdownSummary}\n`;
 
-    var markdownSummary = json2md({ table: { headers: headers, rows: rows } });
-
-    // add scan details to the summary table
-    let scanTime = new Date(obj.results[0].scanTime)
-      .toISOString()
-      .slice(0, 16)
-      .replace("T", " ");
-    let scanId = obj.results[0].scanID;
-    let url = obj.consoleURL;
-    let summaryDetails = `## Twistlock Scan Summary\n\nScan: 💾 ${scanId} | 📅 ${scanTime} | 🔗 [More Details](${url})`;
-    let markdownSummaryWithDetails = `${summaryDetails}\n\n${markdownSummary}\n`;
-
-    // log the Markdown table to the console
-    console.log(markdownSummaryWithDetails);
-    // write the Markdown table to a file
-    const twistlockSummaryTable = "./twistlock-summary-table.md";
-    fs.writeFileSync(twistlockSummaryTable, markdownSummaryWithDetails);
-    core.setOutput("summary-table", twistlockSummaryTable);
-  }
+  // output summary
+  console.log(markdownSummaryWithDetails);
+  var twistlockSummaryTable = "./twistlock-summary-table.md";
+  fs.writeFileSync(twistlockSummaryTable, markdownSummaryWithDetails);
+  core.setOutput("summary-table", twistlockSummaryTable);
 } else {
   console.log("obj.results is not an array");
 }
