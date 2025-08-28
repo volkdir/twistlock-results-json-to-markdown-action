@@ -36,6 +36,28 @@ json2md.converters.vulnerabilities = function (input, json2md) {
   return json2md({ table: { headers: headers, rows: rows } });
 };
 
+// add a custom converter for compliance findings
+json2md.converters.compliances = function (input, json2md) {
+  // convert input to a Markdown table
+  var headers = [
+    "ID",
+    "Title",
+    "Severity",
+    "Category",
+    "Description",
+    "Layer Time",
+  ];
+  var rows = input.map((compliance) => ({
+    ID: compliance.id || "",
+    Title: compliance.title || "",
+    Severity: compliance.severity || "",
+    Category: compliance.category || "",
+    Description: (compliance.description || "").replace(/\n/g, " ").substring(0, 100) + (compliance.description && compliance.description.length > 100 ? "..." : ""),
+    "Layer Time": compliance.layerTime || "",
+  }));
+  return json2md({ table: { headers: headers, rows: rows } });
+};
+
 // read the json
 var fs = require("fs");
 var data = fs.readFileSync(
@@ -72,18 +94,88 @@ if (Array.isArray(obj.results) && obj.results.length > 0) {
   );
   core.setOutput("vulnerability-table", twistlockVulnerabilityTable);
 
-  // count the number of vulnerabilities with each severity
-  var severityCounts = vulnerabilities.reduce(
-    (counts, vulnerability) => {
-      var severity = vulnerability.severity;
-      if (!counts[severity]) {
-        counts[severity] = 0;
-      }
-      counts[severity]++;
-      return counts;
-    },
-    {},
+  // Process compliance findings
+  var compliances = result.compliances || [];
+
+  var markdownCompliances = json2md({
+    compliances: compliances,
+  });
+
+  let compliancesDetails = `## Twistlock Compliance Findings (${compliances.length})\n`;
+  let markdownCompliancesWithDetails = `${compliancesDetails}\n\n${markdownCompliances}\n`;
+
+  // log the Markdown compliance findings to the console
+  console.log(markdownCompliancesWithDetails);
+
+  // write the Markdown compliance findings to a file
+  const twistlockComplianceTable = "./twistlock-compliance-table.md";
+  fs.writeFileSync(
+    twistlockComplianceTable,
+    `${markdownCompliancesWithDetails}\n`,
   );
+  core.setOutput("compliance-table", twistlockComplianceTable);
+
+  // Use complianceDistribution if provided, otherwise calculate severity counts
+  var complianceSeverityCounts;
+  if (result.complianceDistribution) {
+    // Use the provided compliance distribution
+    complianceSeverityCounts = result.complianceDistribution;
+  } else {
+    // Calculate the number of compliance findings with each severity
+    complianceSeverityCounts = compliances.reduce(
+      (counts, compliance) => {
+        var severity = compliance.severity;
+        if (!counts[severity]) {
+          counts[severity] = 0;
+        }
+        counts[severity]++;
+        return counts;
+      },
+      {},
+    );
+  }
+
+  // convert the complianceSeverityCounts object to a Markdown table
+  var complianceHeaders = ["Severity", "Count"];
+
+  var complianceRows = Object.keys(complianceSeverityCounts).map((severity) => {
+    var symbol = severitySymbols[severity] || "";
+    return {
+      Severity: `${symbol} ${severity}`,
+      Count: complianceSeverityCounts[severity],
+    };
+  });
+
+  var markdownComplianceSummary = json2md({ table: { headers: complianceHeaders, rows: complianceRows } });
+
+  var complianceSummaryDetails = `## Twistlock Compliance Summary\n\nScan: 💾 ${scanId} | 📅 ${scanTime} | 🔗 [More Details](${url})`;
+  var markdownComplianceSummaryWithDetails = `${complianceSummaryDetails}\n\n${markdownComplianceSummary}\n`;
+
+  // output compliance summary
+  console.log(markdownComplianceSummaryWithDetails);
+  var twistlockComplianceSummaryTable = "./twistlock-compliance-summary-table.md";
+  fs.writeFileSync(twistlockComplianceSummaryTable, markdownComplianceSummaryWithDetails);
+  core.setOutput("compliance-summary-table", twistlockComplianceSummaryTable);
+
+  // Use vulnerabilityDistribution if provided, otherwise calculate severity counts
+  var severityCounts;
+  if (result.vulnerabilityDistribution) {
+    // Use the provided vulnerability distribution
+    severityCounts = result.vulnerabilityDistribution;
+  } else {
+    // Calculate the number of vulnerabilities with each severity
+    severityCounts = vulnerabilities.reduce(
+      (counts, vulnerability) => {
+        var severity = vulnerability.severity;
+        if (!counts[severity]) {
+          counts[severity] = 0;
+        }
+        counts[severity]++;
+        return counts;
+      },
+      {},
+    );
+  }
 
   // convert the severityCounts object to a Markdown table
   var headers = ["Severity", "Count"];
