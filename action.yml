@@ -18,7 +18,7 @@ outputs:
   compliance-summary-table:
     description: "The compliance summary table in markdown format"
   compliance-table:
-    description: "The compliance  table in markdown format"
+    description: "The compliance table in markdown format"
 
 runs:
   using: "node20"
