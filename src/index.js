@@ -135,6 +135,16 @@ if (Array.isArray(obj.results) && obj.results.length > 0) {
     );
   }
 
+  // Define severity symbols
+  var severitySymbols = {
+    critical: "‼️",
+    important: "❌",
+    high: "⛔️",
+    medium: "⚠️",
+    moderate: "⚠️",
+    low: "🟡",
+  };
+
   // convert the complianceSeverityCounts object to a Markdown table
   var complianceHeaders = ["Severity", "Count"];
 
@@ -179,15 +189,6 @@ if (Array.isArray(obj.results) && obj.results.length > 0) {
 
   // convert the severityCounts object to a Markdown table
   var headers = ["Severity", "Count"];
-
-  var severitySymbols = {
-    critical: "‼️",
-    important: "❌",
-    high: "⛔️",
-    medium: "⚠️",
-    moderate: "⚠️",
-    low: "🟡",
-  };
 
   var rows = Object.keys(severityCounts).map((severity) => {
     var symbol = severitySymbols[severity] || "";
